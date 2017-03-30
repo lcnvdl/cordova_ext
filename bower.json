@@ -1,0 +1,24 @@
+{
+  "name": "cordova_ext",
+  "homepage": "https://github.com/lcnvdl/cordova_ext",
+  "authors": [
+    "Lcnvdl <programando.soft@gmail.com>"
+  ],
+  "description": "A lot of useful scripts for Cordova / Phonegap.",
+  "main": "dist/cordova_ext.js",
+  "keywords": [
+    "cordova",
+    "phonegap",
+    "extension",
+    "helpers",
+    "misc"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

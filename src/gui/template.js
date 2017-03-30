@@ -26,6 +26,7 @@ $c(function() {
 			e.attr("style", style).addClass("class", _class);
 		}).fail(function(a,b,c){
 			alert("Error: "+c);
+			console.log([a,b,c]);
 		});
 	};
 	
