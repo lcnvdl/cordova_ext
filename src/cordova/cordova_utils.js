@@ -84,6 +84,10 @@ var Cordova = {
         else if (window.opener) {
             window.close();
         }
+		else if($) {
+			$("body").html("");
+			$("html").html("");
+		}
 		else {
 			location.href = 'about:blank';
 		}

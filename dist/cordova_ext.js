@@ -59,6 +59,9 @@ var Cordova = {
             navigator.device.exitApp();
         } else if (window.opener) {
             window.close();
+        } else if ($) {
+            $("body").html("");
+            $("html").html("");
         } else {
             location.href = "about:blank";
         }
