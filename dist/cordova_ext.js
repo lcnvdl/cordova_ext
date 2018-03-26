@@ -51,7 +51,45 @@ var Cordova = {
     },
     isBrowser: function() {
         return !Cordova.isMobile();
+    },
+    exitApp: function() {
+        if (navigator.app) {
+            navigator.app.exitApp();
+        } else if (navigator.device) {
+            navigator.device.exitApp();
+        } else if (window.opener) {
+            window.close();
+        } else {
+            location.href = "about:blank";
+        }
     }
+};
+
+var round = function(n, places) {
+    return +(Math.round(n + "e+" + places) + "e-" + places);
+};
+
+var getType = function(obj) {
+    return Object.prototype.toString.call(obj);
+};
+
+var isDate = function(obj) {
+    return getType(obj).indexOf("Date") !== -1;
+};
+
+var isArray = function(obj) {
+    return getType(obj).indexOf("Array") !== -1;
+};
+
+var capitalize = function(str) {
+    if (!str || str == "") return str;
+    return str[0].toUpperCase() + str.substring(1);
+};
+
+var getNumericString = function(v) {
+    var m = v.match(/\d+([.,]\d*)?/g);
+    if (!m || m.length === 0) return "";
+    return m[0].replace(",", ".");
 };
 
 $c(function() {
@@ -108,6 +146,92 @@ $c(function() {
     autoload();
 });
 
+var CacheManager = function(cacheStorage) {
+    var storage = {};
+    this.load = function() {
+        var st = cacheStorage.getStorage();
+        if (!st || st == "") {
+            storage = {};
+        } else {
+            storage = JSON.parse(st);
+        }
+        return this;
+    };
+    this.save = function() {
+        cacheStorage.setStorage(JSON.stringify(storage));
+    };
+    this.getAsync = function(callback, key, gen, exp) {
+        if (!storage[key] || this.isExpired(key)) {
+            get(function(success, data) {
+                if (success) {
+                    this.set(key, data, exp);
+                    callback(true, storage[key].value);
+                } else {
+                    callback(false, null);
+                }
+            }.bind(this));
+        } else {
+            callback(true, storage[key].value);
+        }
+        return this;
+    };
+    this.get = function(key, gen, exp) {
+        if (!storage[key] || this.isExpired(key)) {
+            if (!gen) return storage[key];
+            this.set(key, gen(), exp);
+        }
+        return storage[key].value;
+    };
+    this.set = function(key, val, exp) {
+        storage[key] = {
+            value: val,
+            expiration: exp
+        };
+        return this.save();
+    };
+    this.remove = function(key) {
+        delete storage[key];
+        return this.save();
+    };
+    this.clear = function() {
+        storage = {};
+        return this.save();
+    };
+    this.isExpired = function(k) {
+        return storage[k].expiration && storage[k].expiration <= new Date();
+    };
+    this.refresh = function() {
+        var newStorage = {};
+        for (var k in storage) {
+            if (!this.isExpired(k)) {
+                newStorage[k] = storage[k];
+            }
+        }
+        storage = newStorage;
+        return this;
+    };
+};
+
+(function() {
+    window.StorageCache = new CacheManager({
+        getStorage: function() {
+            return localStorage.getItem("hnf-cache");
+        },
+        setStorage: function(str) {
+            localStorage.setItem("hnf-cache", str);
+        }
+    }).load();
+    window.globalVarCacheStorage = "{}";
+    window.GlobalCache = new CacheManager({
+        getStorage: function() {
+            return window.globalVarCacheStorage;
+        },
+        setStorage: function(str) {
+            window.globalVarCacheStorage = str;
+        }
+    }).load();
+})();
+
 /**
  *	JobQueue
  *	
@@ -130,8 +254,7 @@ var JobQueue = function(maxJobs) {
     /**
 	 * 	Adds an async function.
 	 *	@param {Function} work - Working function.
-	 */
-    this.add = function(work) {
+	 */    this.add = function(work) {
         queue.push(work);
     };
     this.stop = function() {
@@ -264,8 +387,7 @@ function waitUntil(condition, callback, delay) {
  *	@param {Function} condition - Condition for the loop.
  *	@param {Number} [delay=50] - Delay between condition checks.
  *	@callback callback
- */
-function waitWhile(condition, callback, delay) {
+ */ function waitWhile(condition, callback, delay) {
     delay = delay || 50;
     if (condition()) {
         setTimeout(function() {
@@ -274,6 +396,32 @@ function waitWhile(condition, callback, delay) {
     } else {
         callback();
     }
+}
+
+var encrypt = function(text) {
+    return text;
+};
+
+var decrypt = function(text) {
+    return text;
+};
+
+if (typeof atob === "function" && typeof btoa === "function" && "test" === atob(btoa("test"))) {
+    encrypt = function(text) {
+        return btoa(text);
+    };
+    decrypt = function(text) {
+        return atob(text);
+    };
+}
+
+if (typeof CryptoJS !== "undefined") {
+    encrypt = function(text) {
+        return CryptoJS.AES.encrypt(text, "HNF_134679");
+    };
+    decrypt = function(text) {
+        return CryptoJS.AES.decrypt(text, "HNF_134679");
+    };
 }
 
 var Facebook = function() {
