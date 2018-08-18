@@ -295,6 +295,12 @@ var JobQueue = function(maxJobs) {
             }
         }
     };
+    this.countQueue = function() {
+        return queue.length;
+    };
+    this.isEmpty = function() {
+        return queue.length === 0;
+    };
     this.process();
 };
 
